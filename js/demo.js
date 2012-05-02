@@ -489,8 +489,13 @@ luxanimals.demo = (function() {
 
 		// remove actor and it's skin object
 		var removeActor = function(actor) {
-			stage.removeChild(actor.skin);
-			actors.splice(actors.indexOf(actor),1);
+		    if(actor) {
+				stage.removeChild(actor.skin);
+				actors.splice(actors.indexOf(actor),1);
+			}
+			else{
+				console.log("Avoided removing an actor...");
+			}
 		}
 
 		// box2d update function. delta time is used to avoid differences in simulation if frame rate drops
