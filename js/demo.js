@@ -28,7 +28,7 @@ luxanimals.demo = (function() {
 		console.log("Labels: " + labels );
 		console.log("Box2D: " + box2d );
 		console.log("Birds: " + birds );
-		labels.setup();
+		//labels.setup();
 		box2d.setup();
 		window.onfocus = onFocus;
 		window.onblur = onBlur;
@@ -50,6 +50,7 @@ luxanimals.demo = (function() {
 			stage = new Stage(canvas);
 			stage.snapPixelsEnabled = true;
 			stage.mouseEventsEnabled = true;
+			Touch.enable(stage);
 			//stage.onPress = function(evt){console.log("YAY!");}
 			
 			var bowlBMP = new Bitmap("images/bowl500.png");
@@ -152,15 +153,56 @@ luxanimals.demo = (function() {
 			addDebug();
 			makeBowl( world, 24, CENTER.x, CENTER.y, RADIUS );
 			makeABunchOfDynamicBodies();
+			
+			setupContactListener();
 		}
+		
+		var setupContactListener = function()
+		{
+			var contactListener = new Box2D.Dynamics.b2ContactListener;
+		    contactListener.BeginContact = function(contact, manifold) {
+				var actorA = contact.GetFixtureA().GetBody().GetUserData();
+				var actorB = contact.GetFixtureB().GetBody().GetUserData();
+				
+				if(actorA && actorB) {//&&
+				   //(actorA.cerealType == actorB.cerealType)) {
+						actorA.touching.push(actorB);
+						actorB.touching.push(actorA);
+				}
+			};
+			
+			contactListener.EndContact = function(contact) {
+				var actorA = contact.GetFixtureA().GetBody().GetUserData();
+				var actorB = contact.GetFixtureB().GetBody().GetUserData();
+				
+				//remove them from eachother's touching arrays
+				if(actorA && actorB && !contact.isTouching ) {//&&
+				   //(actorA.cerealType == actorB.cerealType)) {
+						var aIndex = actorB.touching.indexOf(actorA);
+						if(aIndex > -1)
+								actorB.touching.splice(aIndex, 1);
+						
+						var bIndex = actorA.touching.indexOf(actorB);
+						if(bIndex > -1)
+								actorA.touching.splice(bIndex, 1);
+				}
+		
+				/*
+				if (contact.GetFixtureA().GetBody().GetUserData()== 'wheel' ||
+					contact.GetFixtureB().GetBody().GetUserData()== 'wheel' )
+
+				onground = false;
+				*/
+		    };
+
+			world.SetContactListener(contactListener);
+		};
 		
 		var makeBowl = function( world, numSides, centerX, centerY, radius )
 		{	
 			var ANGLE_PER_SIDE = 2 * Math.PI / numSides;
 			//SIDE_LENGTH = 2*RADIUS( tan (180/NUM SIDES) ) http://www.mathopenref.com/polygonsides.html
 			var SIDE_LENGTH = 2 * radius * Math.tan( Math.PI / numSides );
-			
-			
 			
 			//top
 			for( var i = 0; i < numSides; i++ )
@@ -196,12 +238,11 @@ luxanimals.demo = (function() {
 			}
 		}
 		
-		
-		
 		var makeABunchOfDynamicBodies = function(){
 			var i;
 			
 			//Add rectangles
+			
 			for (i = 0; i < NUM_OATS; i++){
 				new Oat();
 			}
@@ -232,7 +273,7 @@ luxanimals.demo = (function() {
 			malFD.shape = circDef;
 			malFD.density = 1.0;
 			// Override the default friction.
-			malFD.friction = 0.3;
+			malFD.friction = 0.6;
 			malFD.restitution = 0.1;
 			
 			bodyDefC.position.Set((Math.random() * 400 + 120) / SCALE, (Math.random() * 150 + 50) / SCALE);
@@ -254,21 +295,16 @@ luxanimals.demo = (function() {
 			
 			var self = this;
 			
-			var actor = new actorObject(malBody, rainbowBMP);
+			var actor = new actorObject(malBody, rainbowBMP, "MARSHMALLOW");
 			malBody.SetUserData(actor);
 			bodies.push(malBody);
 			
-			console.log("This: " + this);
 			rainbowBMP.onPress = function(evt){ actor.eat(); }
 		}
-		mallow.prototype.eat = function() {
-				console.log("EAT MALLOW! YUM.");
-		};
 		
 		var Oat = function() {
 				
 		    this.sideLength = 30;
-			
 		
 		    //console.log("Creating an oat.");
 		    var bodyDef = new b2BodyDef();
@@ -288,10 +324,8 @@ luxanimals.demo = (function() {
 		    var bowlPos = box2d.getRandomPositionInBowl();
 		    bodyDef.position.Set( bowlPos.x / SCALE, bowlPos.y / SCALE);
 		    bodyDef.angle = Math.random() * Math.PI;
-		    console.log("Creating oat with fixture def: " + oatFD);
 		
 		    var oatBody = world.CreateBody(bodyDef);
-		    console.log("Body: " + oatBody);
 		    oatBody.CreateFixture(oatFD);
 		    oatBody.ApplyForce( new b2Vec2( Math.random() * 5, Math.random() * 5 ),
 							    new b2Vec2( Math.random() * 5, Math.random() * 5 ));
@@ -306,11 +340,40 @@ luxanimals.demo = (function() {
 		    honeyBMP.mouseEnabled = true;
 		    stage.addChild(honeyBMP);
 		
-		    var actor = new actorObject(oatBody, honeyBMP);
+		    var actor = new actorObject(oatBody, honeyBMP, "OAT");
 		    honeyBMP.onPress = function(evt){actor.eat();}
 		
 		    oatBody.SetUserData(actor);
 		};
+		
+		/**
+		* b2Body, Bitmap -> void
+		* responsible for taking the body's position and translating it
+		* to your easel display object
+		*/
+		var actorObject = function(body, skin, type) {
+		   this.body = body;
+		   this.skin = skin;
+		   this.cerealType = type;
+		   
+		   this.touching = [];
+		   
+		   this.update = function() {  // translate box2d positions to pixels
+			   this.skin.rotation = this.body.GetAngle() * (180 / Math.PI);
+			   this.skin.x = this.body.GetWorldCenter().x * SCALE;
+			   this.skin.y = this.body.GetWorldCenter().y * SCALE;
+		   }
+		   actors.push(this);
+		}
+		actorObject.prototype.eat = function(){
+				//console.log("Eating an actor at " + this.skin.x + ", " + this.skin.y );
+				console.log("Touching " + this.touching.length + " other bits");
+				//eat this and all of the pieces that it's touching
+				bodiesToRemove.push(this.body);
+				for(var i=0; i<this.touching.length; i++) {
+						bodiesToRemove.push(this.touching[ i ].body);
+				}
+		}
 		
 		// create bird body shape and assign actor object
 		var createBird = function(skin) {
@@ -340,7 +403,6 @@ luxanimals.demo = (function() {
 			
 			spoonAnchor = world.CreateBody( anchorDef );
 			spoonAnchor.CreateFixture2( shape );
-			
 		}
 		
 		/**
@@ -424,26 +486,6 @@ luxanimals.demo = (function() {
 			debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
 			world.SetDebugDraw(debugDraw);
 		}
-
-		/**
-		* b2Body, Bitmap -> void
-		* responsible for taking the body's position and translating it
-		* to your easel display object
-		*/
-		var actorObject = function(body, skin) {
-		   this.body = body;
-		   this.skin = skin;
-		   this.update = function() {  // translate box2d positions to pixels
-			   this.skin.rotation = this.body.GetAngle() * (180 / Math.PI);
-			   this.skin.x = this.body.GetWorldCenter().x * SCALE;
-			   this.skin.y = this.body.GetWorldCenter().y * SCALE;
-		   }
-		   actors.push(this);
-		}
-		actorObject.prototype.eat = function(){
-				console.log("Eating an actor at " + this.skin.x + ", " + this.skin.y );
-		}
-
 
 		// remove actor and it's skin object
 		var removeActor = function(actor) {
