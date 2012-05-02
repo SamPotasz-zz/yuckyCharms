@@ -60,6 +60,13 @@ luxanimals.demo = (function() {
 			bowlBMP.mouseEnabled = true;
 			stage.addChild(bowlBMP);
 			bowlBMP.onPress = box2d.drawSpoon;
+			
+			var pourBMP = new Bitmap("images/pourButton.png");
+			pourBMP.x = 380;
+			pourBMP.y = 10;
+			pourBMP.mouseEnabled = true;
+			stage.addChild(pourBMP);
+			pourBMP.onPress = box2d.pour;
 		}
 
 		var ticker = function() {
@@ -152,6 +159,8 @@ luxanimals.demo = (function() {
 			createSpoonAnchor();
 			addDebug();
 			makeBowl( world, 24, CENTER.x, CENTER.y, RADIUS );
+			
+			makeABunchOfDynamicBodies();
 			makeABunchOfDynamicBodies();
 			
 			setupContactListener();
@@ -321,7 +330,7 @@ luxanimals.demo = (function() {
 		    bodyDef.position.Set((Math.random() * 400 + 120) / SCALE,
 							 (Math.random() * 150 + 50) / SCALE);
 		
-		    var bowlPos = box2d.getRandomPositionInBowl();
+		    var bowlPos = getRandomPositionInBowl();
 		    bodyDef.position.Set( bowlPos.x / SCALE, bowlPos.y / SCALE);
 		    bodyDef.angle = Math.random() * Math.PI;
 		
@@ -551,7 +560,7 @@ luxanimals.demo = (function() {
 			drawSpoon: drawSpoon,
 			numMallows: numMallows,
 			numOats: numOats,
-			getRandomPositionInBowl: getRandomPositionInBowl
+			pour: makeABunchOfDynamicBodies
 		}
 	})();
 
