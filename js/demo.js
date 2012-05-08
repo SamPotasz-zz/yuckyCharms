@@ -18,8 +18,10 @@ luxanimals.demo = (function() {
 	var canvas, context, debugCanvas, debugContext;
 	var birdDelayCounter = 0; // counter for delaying creation of birds
 	var focused = true;
+	
+	var monster;
 
-	$('#debug').on('click', function() { $('#debugCanvas').toggle(); });  // toggle debug view
+	$('#debug').on('click', function(){ $('#debugCanvas').toggle(); });  // toggle debug view
 
 	$(document).ready(function() {
 		// setup functions to run once page is loaded
@@ -28,8 +30,11 @@ luxanimals.demo = (function() {
 		console.log("Labels: " + labels );
 		console.log("Box2D: " + box2d );
 		console.log("Birds: " + birds );
+		console.log("Monster: " + monster )
 		//labels.setup();
+		monster.setup();
 		box2d.setup();
+		monster.addToStage();
 		window.onfocus = onFocus;
 		window.onblur = onBlur;
 	});
@@ -60,13 +65,6 @@ luxanimals.demo = (function() {
 			bowlBMP.mouseEnabled = true;
 			stage.addChild(bowlBMP);
 			bowlBMP.onPress = box2d.drawSpoon;
-			
-			var pourBMP = new Bitmap("images/pourButton.png");
-			pourBMP.x = 380;
-			pourBMP.y = 10;
-			pourBMP.mouseEnabled = true;
-			stage.addChild(pourBMP);
-			pourBMP.onPress = box2d.pour;
 		}
 
 		var ticker = function() {
@@ -126,16 +124,64 @@ luxanimals.demo = (function() {
 		}
 	})();
 
+	var monster = (function() {
+		var NUM_FACES = 3;
+		var faces = [];
+		
+		var DIR_PREFIX = "images/faces/";
+		
+		var FACE_X = 10;
+		var FACE_Y = 400;
+		
+		var container;
+		
+		var setup = function() {
+				var sadBMP = new Bitmap(DIR_PREFIX + "saddest.png");
+				var neutBMP = new Bitmap(DIR_PREFIX + "neutral.png");
+				var happyBMP = new Bitmap(DIR_PREFIX + "superHappy.png");
+				
+				faces.push(sadBMP);
+				faces.push(neutBMP);
+				faces.push(happyBMP);
+				
+				container = new Container();
+				container.x = FACE_X;
+				container.y = FACE_Y;
+		}
+		
+		var addToStage = function() {
+				stage.addChild(container);
+		}
+		
+		var update = function(ratio) {
+				var faceIndex = Math.floor(NUM_FACES * ratio);
+		
+				console.log("Ratio: " + ratio + ", index: " + faceIndex);
+				container.removeAllChildren();
+				container.addChild(faces[faceIndex]);
+				stage.update();
+		}
+		
+		return {
+				setup : setup,
+				addToStage : addToStage,
+				update : update
+		}
+	})();
+	
 	var box2d = (function() {
 
 		// important box2d scale and speed vars
 		var SCALE = 30, STEP = 20, TIMESTEP = 1/STEP;
+		
+		var MALLOW_TYPE = "MARSHMALLOW";
+		var OAT_TYPE = "OAT";
 
 		var CENTER = new Point( 250, 250 );
  		var RADIUS = 250.0;
 		
-		var NUM_MALLOWS = 15;
-		var NUM_OATS = 10;
+		var NUM_MALLOWS = 30;
+		var NUM_OATS = 20;
 		
 		//ratio of radiuses. 10 means ten cereal pieces will fit width-wise in a bowl
 		var BIT_TO_BOWL = 10.0;
@@ -152,7 +198,9 @@ luxanimals.demo = (function() {
 		var spoonAnchor; //body
 		var spoon;
 		var mousejoint;
-
+		
+		var pourBMP;
+		
 		// box2d world setup and boundaries
 		var setup = function() {
 			world = new b2World(new b2Vec2(0,0), true);
@@ -161,9 +209,15 @@ luxanimals.demo = (function() {
 			makeBowl( world, 24, CENTER.x, CENTER.y, RADIUS );
 			
 			makeABunchOfDynamicBodies();
-			makeABunchOfDynamicBodies();
 			
 			setupContactListener();
+			
+			pourBMP = new Bitmap("images/pourButton.png");
+			pourBMP.x = 380;
+			pourBMP.y = 10;
+			pourBMP.mouseEnabled = true;
+			stage.addChild(pourBMP);
+			pourBMP.onPress = box2d.pour;
 		}
 		
 		var setupContactListener = function()
@@ -260,6 +314,8 @@ luxanimals.demo = (function() {
 			for (i = 0; i < NUM_MALLOWS; i++){
 				mallow();
 			}
+			
+			updateMonster();
 		}
 		
 		var getRandomPositionInBowl = function(){
@@ -304,7 +360,7 @@ luxanimals.demo = (function() {
 			
 			var self = this;
 			
-			var actor = new actorObject(malBody, rainbowBMP, "MARSHMALLOW");
+			var actor = new actorObject(malBody, rainbowBMP, MALLOW_TYPE);
 			malBody.SetUserData(actor);
 			bodies.push(malBody);
 			
@@ -349,7 +405,7 @@ luxanimals.demo = (function() {
 		    honeyBMP.mouseEnabled = true;
 		    stage.addChild(honeyBMP);
 		
-		    var actor = new actorObject(oatBody, honeyBMP, "OAT");
+		    var actor = new actorObject(oatBody, honeyBMP, OAT_TYPE);
 		    honeyBMP.onPress = function(evt){actor.eat();}
 		
 		    oatBody.SetUserData(actor);
@@ -382,6 +438,7 @@ luxanimals.demo = (function() {
 				for(var i=0; i<this.touching.length; i++) {
 						bodiesToRemove.push(this.touching[ i ].body);
 				}
+				box2d.updateMonster();
 		}
 		
 		// create bird body shape and assign actor object
@@ -478,11 +535,32 @@ luxanimals.demo = (function() {
 		}
 		
 		var numMallows = function(){
-			return NUM_MALLOWS;
+		    return countActorsByType(MALLOW_TYPE);
+			//return NUM_MALLOWS;
 		}
 		
 		var numOats = function(){
-			return NUM_OATS;
+			//return NUM_OATS;
+			return countActorsByType(OAT_TYPE);
+		}
+		
+		var countActorsByType = function(toMatch) {
+				var count = 0;
+				for(var i=0; i<actors.length; i++) {
+						var currActor = actors[i];
+						if(actors[i].cerealType == toMatch)
+								count++;
+				}
+				return count;
+		}
+		
+		var updateMonster = function(){
+				var mallows = numMallows();
+				var oats = numOats();
+				
+				var ratio =  mallows / (mallows + oats);
+				console.log("Mallows: " + mallows + " & Oats: " + oats);
+				monster.update(ratio);
 		}
 		
 		// box2d debugger
@@ -537,6 +615,12 @@ luxanimals.demo = (function() {
 	   			world.m_debugDraw.m_sprite.graphics.clear();
 	   			world.DrawDebugData();
 				
+				if(actors.length == 0) {
+						pourBMP.visible = true;
+				}
+				else{
+						pourBMP.visible = false;
+				}
 				/*
 	   			if(bodies.length > 30) {
 	   				bodiesToRemove.push(bodies[0]);
@@ -560,7 +644,8 @@ luxanimals.demo = (function() {
 			drawSpoon: drawSpoon,
 			numMallows: numMallows,
 			numOats: numOats,
-			pour: makeABunchOfDynamicBodies
+			pour: makeABunchOfDynamicBodies,
+			updateMonster: updateMonster
 		}
 	})();
 
