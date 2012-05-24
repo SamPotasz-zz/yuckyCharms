@@ -1,0 +1,30 @@
+It's Yucky Charms, y'all!
+
+A javascript physics based game about eating Lucky Charms.
+THE javascript physics-based game about eating Lucky Charms.
+
+This is my first attempt at making a whole project in js so the code is
+a great small mess. But there's not that much of it!
+But there's also around 0 comments and a ton that's not used that should be
+commented out...
+
+Anyways, the project is built off of this tutorial:
+http://www.luxanimals.com/blog/article/combining_easel_box2d
+so not surprisingly combines easel.js and box2dweb
+
+All of my code lives in demo.js
+
+Please fork, comment, and teach me! I come from an ActionScript background, and
+I have NO idea what I'm doing in this crazy world of javascript particularly
+when it comes to scope and object creation and prototyping. So you'll see
+things like the actorObject which is defined within the box2d var and then
+other objects like monster and MonsterComic which are defined outside.
+
+Why is that? I don't know. Hopefully you do!
+
+For more explanation, conversation, etc. check the blog where hopefully
+some more technical posts are forthcoming:
+http://codesmores.wordpress.com/category/yucky-charms/
+
+This might not be a super helpful README, but it's something and this is my first
+open-source github project, and hey, social coding!

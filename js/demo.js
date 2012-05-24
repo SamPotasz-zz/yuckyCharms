@@ -621,7 +621,7 @@ function Segment(p1, p2){
 			addDebug();
 			makeBowl( world, 24, CENTER.x, CENTER.y, RADIUS );
 			
-			//makeABunchOfDynamicBodies();
+			makeABunchOfDynamicBodies();
 			
 			setupContactListener();
 			
