@@ -812,7 +812,7 @@ function Segment(p1, p2){
 							    new b2Vec2( Math.random() * 5, Math.random() * 5 ));
 		
 		
-		    var honeyBMP = new Bitmap("images/squaredOat.png");
+		    var honeyBMP = new Bitmap("images/oatGroupTwo.png");
 		//honeyBMP.x = Math.round(Math.random()*500);
 		//honeyBMP.y = -30;
 		    honeyBMP.regX = 30;   // important to set origin point to center of your bitmap
