@@ -1,10 +1,14 @@
-html, body { margin:0; padding:0; }
+body {
+	padding-left:50px;
+	font-family: sans-serif, "Arial";
+}
 
 #demoCanvas, #debugCanvas {
 	z-index: 1;
 }
 
 #debugCanvas {
+	padding-left: 53px;
 	z-index: 2;
 	display: none;
 	position: absolute;
@@ -23,7 +27,6 @@ html, body { margin:0; padding:0; }
 }
 
 .button {
-	position: absolute;
 	top: 630px;
 	width: 250px;
 	height: 25px;

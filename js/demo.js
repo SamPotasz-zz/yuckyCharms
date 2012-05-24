@@ -1,5 +1,73 @@
 var luxanimals = {};
 
+var MonsterFace = function(imgPath, minRatio, maxRatio) {
+		var DIR_PREFIX = "images/faces/";
+		this.bmp = new Bitmap(DIR_PREFIX + imgPath);
+		this.minRatio = minRatio;
+		this.maxRatio = maxRatio;
+}
+
+var MonsterComic = function() {
+		/*
+		this.PANE_HEIGHT = 100;
+		this.PANE_WIDTH = 100;
+		
+		this.ROWS = 5;
+		this.COLS = 5;
+		*/
+		//array of bitmaps to display
+		this.panes = [];
+		
+		//where to display the panes
+		this.container = new Container();
+		this.container.mouseEnabled = false;
+}
+
+MonsterComic.PANE_HEIGHT = 100;
+MonsterComic.PANE_WIDTH = 100;
+		
+MonsterComic.ROWS = 5;
+MonsterComic.COLS = 5;
+
+MonsterComic.prototype.push = function(bitmap){
+		this.panes.push(bitmap);
+}
+
+/**
+ * Displays the comic strip to the stage. <br/>
+ * Adds all the panes to the container at correct position, <br/>
+ * and then adds the container to the stage
+ */
+MonsterComic.prototype.show = function(){
+		//console.log("Showing " + this.panes.length + " faces");
+		
+		for(var i=0; i<this.panes.length; i++) {
+				var col = i % MonsterComic.COLS;
+				var row = i / MonsterComic.ROWS;
+				
+				var currFace = this.panes[i];
+				currFace.x = col * MonsterComic.PANE_WIDTH;
+				currFace.y = row * MonsterComic.PANE_HEIGHT;
+				//console.log("Adding face at " + currFace.x + ", " + currFace.y);
+				
+				this.container.addChild(currFace);
+		}
+		stage.addChild(this.container);
+		stage.update();
+}
+
+MonsterComic.prototype.hide = function() {
+		//empty the panes
+		while(this.panes.length > 0)
+				this.panes.pop();
+		
+		if(stage.contains(this.container))
+				stage.removeChild(this.container);
+		
+		stage.update();
+}
+
+
 luxanimals.demo = (function() {
 
 	// Box2d vars
@@ -19,6 +87,7 @@ luxanimals.demo = (function() {
 	var birdDelayCounter = 0; // counter for delaying creation of birds
 	var focused = true;
 	
+	var setup;
 	var monster;
 
 	$('#debug').on('click', function(){ $('#debugCanvas').toggle(); });  // toggle debug view
@@ -27,6 +96,7 @@ luxanimals.demo = (function() {
 		// setup functions to run once page is loaded
 		setup.canvas();
 		setup.ticker();
+		setup.startTicker();
 		console.log("Labels: " + labels );
 		console.log("Box2D: " + box2d );
 		console.log("Birds: " + birds );
@@ -70,12 +140,20 @@ luxanimals.demo = (function() {
 		var ticker = function() {
 			Ticker.setFPS(30);
 			Ticker.useRAF = true;
-			Ticker.addListener(luxanimals.demo);  // looks for "tick" function within the luxanimals.demo object
+			
+		}
+		var startTicker = function() {
+				Ticker.addListener(luxanimals.demo);  // looks for "tick" function within the luxanimals.demo object
+		}
+		var stopTicker = function() {
+				Ticker.removeAllListeners();
 		}
 
 		return {
 			canvas: canvas,
-			ticker: ticker
+			ticker: ticker,
+			startTicker : startTicker,
+			stopTicker : stopTicker
 		}
 	})();
 
@@ -125,7 +203,7 @@ luxanimals.demo = (function() {
 	})();
 
 	var monster = (function() {
-		var NUM_FACES = 3;
+		var NUM_FACES = 5;
 		var faces = [];
 		
 		var DIR_PREFIX = "images/faces/";
@@ -135,39 +213,371 @@ luxanimals.demo = (function() {
 		
 		var container;
 		
+		//panes of the comic strip. Which monster face is visible after
+		//each update
+		//var comic;
+		
 		var setup = function() {
-				var sadBMP = new Bitmap(DIR_PREFIX + "saddest.png");
-				var neutBMP = new Bitmap(DIR_PREFIX + "neutral.png");
-				var happyBMP = new Bitmap(DIR_PREFIX + "superHappy.png");
+				var saddest = new MonsterFace("saddest.png", -1, 0.2);
+				var medSad = new MonsterFace("medSad.png", 0.2, 0.4 );
+				var neutral = new MonsterFace("neutral.png", 0.4, 0.65);
+				var medHappy = new MonsterFace("medHappy.png", 0.65, 0.85);
+				var happiest = new MonsterFace("superHappy.png", 0.85, 1.0);
 				
-				faces.push(sadBMP);
-				faces.push(neutBMP);
-				faces.push(happyBMP);
+				faces.push(saddest);
+				faces.push(medSad);
+				faces.push(neutral);
+				faces.push(medHappy);
+				faces.push(happiest);
 				
 				container = new Container();
 				container.x = FACE_X;
 				container.y = FACE_Y;
+				
+				//comic = new MonsterComic();
 		}
+		
+		/*
+		var reset = function() {
+				comic.hide();
+		}
+		*/
 		
 		var addToStage = function() {
 				stage.addChild(container);
 		}
 		
 		var update = function(ratio) {
-				var faceIndex = Math.floor(NUM_FACES * ratio);
+				var faceIndex;//  = Math.floor(NUM_FACES * ratio);
+				for(var i=0; i<NUM_FACES; i++) {
+						var currFace = faces[i];
+						if(ratio > currFace.minRatio &&
+						   ratio <= currFace.maxRatio )
+								faceIndex = i;
+				}
 		
-				console.log("Ratio: " + ratio + ", index: " + faceIndex);
+				//console.log("Ratio: " + ratio + ", index: " + faceIndex);
 				container.removeAllChildren();
-				container.addChild(faces[faceIndex]);
+				var toShow = faces[faceIndex].bmp;
+				container.addChild(toShow);
+				//comic.push(toShow);
+				
 				stage.update();
 		}
+		
+		/**
+		 * When a bowl of cereal is finished, show the story!
+		 */
+		/*
+		var showComic = function() {
+				comic.show();
+		}
+		*/
 		
 		return {
 				setup : setup,
 				addToStage : addToStage,
 				update : update
+				//reset : reset,
+				//showComic : showComic
 		}
 	})();
+	
+	/**
+	 * A collection of points that may define a polygon
+	 */
+	var Lasso = function() {
+		this.points = [];
+		this.images = [];
+		this.showingBlue = false;
+	};
+	Lasso.HIT_THRESHOLD = 10.0;
+	Lasso.CLOSENESS_THRESH = 3.0;
+	
+	Lasso.prototype.reset = function(){
+		this.points = [];
+		while(this.images.length > 0){
+				var currImg = this.images.pop();
+				if(stage.contains(currImg))
+						stage.removeChild(currImg);
+		}
+	}
+	
+	Lasso.prototype.addPoint = function(toAdd){
+		if(this.points.length>0){
+				var lastPt = this.points[this.points.length-1];
+				//only add the point if it's far enough away from previous point
+				if((Math.abs(toAdd.x - lastPt.x) < Lasso.CLOSENESS_THRESH) &&
+				   (Math.abs(toAdd.y - lastPt.y) < Lasso.CLOSENESS_THRESH)){
+						return;
+				}
+		}
+		
+		
+		this.points.push(toAdd);
+		
+		if(this.showingBlue)
+				this.reset();
+		
+		//check if we've made a full lasso
+		if(this.points.length > 5){
+				//check against previously existing points (hence length-1)
+				for(var i=0; i<this.points.length-10; i++){
+						var currPoint = this.points[i];
+						
+						//if we've intersected with a previous point on the rope,
+						//then draw the lasso and return!
+						if((Math.abs(toAdd.x - currPoint.x) < Lasso.HIT_THRESHOLD) &&
+						   (Math.abs(toAdd.y - currPoint.y) < Lasso.HIT_THRESHOLD)){
+								this.drawLasso(i);
+								this.showingBlue = true;
+								return;
+						}
+				}
+		}
+		
+		/*
+		var length = this.points.length;
+		//check the latest line segment against all other line segments
+		//need at least 4 points to check two segments against each other
+		if(length >= 4){
+				//define points of new line segment- ending at new point
+				var point3 = this.points[length-1];
+				//var x3 = this.points[length - 1].x;
+				//var y3 = this.points[length - 1].y;
+				
+				var point4 = toAdd;
+				//var x4 = toAdd.x;
+				//var y4 = toAdd.y;
+				
+				var segment2 = new Segment(point3, point4);
+				
+				for(var backIndex=0; backIndex <= length-3; backIndex++){
+						var backPt = this.points[backIndex];
+						var frontPt= this.points[backIndex+1];
+						var segment1 = new Segment(backPt, frontPt);
+						//if(doLineSegmentsIntersect(backPt.x, backPt.y,
+						//						   frontPt.x, frontPt.y,
+						//						   x3, y3, x4, y4)){
+						if(intersect(segment1, segment2, new Point())){
+								this.drawLasso(backIndex+1);
+						}
+				}
+		}
+		*/
+		
+		this.showingBlue = false;
+		
+		var rainbowBMP = new Bitmap("images/blackDot.png");
+		rainbowBMP.regX = 5;   // important to set origin point to center of your bitmap
+		rainbowBMP.regY = 5; 
+		rainbowBMP.snapToPixel = true;
+		rainbowBMP.mouseEnabled = false;
+		
+		rainbowBMP.x = toAdd.x;
+		rainbowBMP.y = toAdd.y;
+		
+		stage.addChild(rainbowBMP);
+		this.images.push(rainbowBMP);
+	}
+	
+	Lasso.prototype.drawLasso = function(startIndex){
+		for(var i=startIndex; i<this.points.length-1; i++){
+				var dotBMP = new Bitmap("images/blueDot.png");
+				dotBMP.regX = 5;   // important to set origin point to center of your bitmap
+				dotBMP.regY = 5; 
+				dotBMP.snapToPixel = true;
+				dotBMP.mouseEnabled = false;
+				
+				dotBMP.x = this.points[i].x;
+				dotBMP.y = this.points[i].y;
+				
+				stage.addChild(dotBMP);
+				this.images.push(dotBMP);
+		}
+		
+		this.makeSensor();
+		
+		//clear the points
+		this.points = [];
+	}
+	
+	Lasso.prototype.makeSensor = function(){
+		//can only have up to 8 vertices, so do we use all our points?
+		var length = this.points.length;
+		var ptStep = length <= 9 ? 1 : Math.floor(length / 8);
+		
+		//create the fixture definition
+		var body;
+		var bodyDefP = new b2BodyDef();
+		var polyDef = new b2PolygonShape();
+		var fixtureDef = new b2FixtureDef();
+		// a square
+		fixtureDef.vertexCount = 8;
+		fixtureDef.density = 1.0;
+		fixtureDef.friction = 0.3;
+		fixtureDef.restitution = 0.1;
+		//fixtureDef.position.Set(2,2);
+		fixtureDef.angle = 0;
+		//polyDef.position.Set(2,2);
+		
+		/*
+		polyDef.vertices[0].Set(-1,-1);
+		polyDef.vertices[1].Set(1,-1);
+		polyDef.vertices[2].Set(1,1);
+		polyDef.vertices[3].Set(-1,1);
+		*/
+		//get eight vertices
+		var verts = [];
+		for(var i=0; i<8; i++){
+				//console.log("i: " + i);
+				//console.log("Polydef.vertices: " + polyDef.vertices);
+				var easelPt = this.points[i*ptStep];
+				easelPt.x = easelPt.x / box2d.SCALE;
+				easelPt.y = easelPt.y / box2d.SCALE;
+				//polyDef.vertices[i].Set(easelPt.x, easelPt.y);
+				verts.push(new b2Vec2(easelPt.x, easelPt.y));
+		}
+		//had to comment out line 3134 of box2dweb-2.1.a.3.js
+		polyDef.SetAsArray(verts, 8);
+		fixtureDef.shape = polyDef;
+		
+		body = box2d.getWorld().CreateBody(bodyDefP);
+		body.CreateFixture(polyDef);
+		body.SetMassFromShapes();
+	}
+	
+	// the cross product of vectors v1 and v2.
+function cross(v1, v2) {
+	return v1.x * v2.y - v2.x * v1.y;
+}
+
+/*
+	seg1 is represented by p + t * r where  0 <= t <= 1
+	seg2 is represented by q + u * s where  0 <= u <= 1
+	
+	the intersection of line 1 and line 2 is given by 
+	p + t*r = q + u*s, 
+	let x be the two dimensional cross product then
+	(p + t*r) x s = (q + u*s) x s = q x s
+	which solving for t gives
+	t = (q - p) x s / (r x s).
+	similarly solving for u gives
+	u = (q - p) x r / (r x s).
+	the segments intersect if 0 <= t <= 1 and 0 <= 1 <= u.
+	If r x s is zero then the lines are parallel, in which case if 
+	(q - p) x r = 0 then the lines are co-linear.
+	
+*/
+var epsilon = 10e-6;
+var DONT_INTERSECT = 0;
+var PARALLEL_DONT_INTERSECT = 1;
+var COLINEAR_DONT_INTERSECT = 2;
+var INTERSECT = 3;
+var COLINEAR_INTERSECT = 4;
+function intersect(seg1, seg2, intersectionPoint) {
+	p = seg1.p1;
+	r = seg1.p2.subtract(seg1.p1);
+	//r = new Point(seg1.p2.x - seg1.p1.x, seg1.p2.y - seg1.p1.y);
+	q = seg2.p1;
+	s = seg2.p2.subtract(seg2.p1);
+	//s = new Poin
+	rCrossS = cross(r, s);
+	if(rCrossS <= epsilon && rCrossS >= -1 * epsilon){
+		return PARALLEL_DONT_INTERSECT;
+	}
+	t = cross(q.subtract(p), s)/rCrossS;
+	u = cross(q.subtract(p), r)/rCrossS;
+	if(0 <= u && u <= 1 && 0 <= t && t <= 1){
+		intPoint = p.add(r.scalarMult(t));
+		intersectionPoint.x = intPoint.x;
+		intersectionPoint.y = intPoint.y;
+		return INTERSECT;
+	}else{
+		return DONT_INTERSECT;
+	}
+}
+function Vector(x, y){
+  this.x = x;
+  this.y = y;
+  this.color = '#000';
+  this.draw = function() {
+    var canvas = getCanvas();
+    context = canvas.getContext('2d');
+    context.strokeStyle = this.color; //black
+    context.fillRect(this.x, this.y, 5, 5);
+
+  };
+  this.scalarMult = function(scalar){
+	  return new Vector(this.x * scalar, this.y * scalar);
+  }
+  this.dot = function(v2) {
+    return this.x * v2.x + this.y * v2.y;
+  };
+  this.perp = function() {
+    return new Vector(-1 * this.y, this.x);
+  };
+  this.subtract = function(v2) {
+    return this.add(v2.scalarMult(-1));//new Vector(this.x - v2.x, this.y - v2.y);
+  };
+  this.add = function(v2) {
+	  return new Vector(this.x + v2.x, this.y + v2.y);
+  }
+}
+function Segment(p1, p2){
+  //alert('s1');
+  //this.p1 = p1;
+  this.p1 = new Vector(p1.x, p1.y);
+  //this.p2 = p2;
+  this.p2 = new Vector(p2.x, p2.y);
+  //alert('s2');
+  this.draw = function() {
+    //alert('s3');
+    var canvas = getCanvas();
+    context = canvas.getContext('2d');
+    context.strokeStyle = '#000'; //black
+    context.lineWidth = 4;
+    //alert('s4');
+    context.beginPath();
+    context.moveTo(p1.x, p1.y);
+    context.lineTo(p2.x, p2.y);
+    //alert('s5');
+    context.closePath();
+    context.stroke();
+    //alert('s6');
+  };
+
+}
+	
+	/*
+	function isOnSegment(xi, yi, xj, yj, xk, yk) {
+		return (xi <= xk || xj <= xk) && (xk <= xi || xk <= xj) &&
+			   (yi <= yk || yj <= yk) && (yk <= yi || yk <= yj);
+    }
+
+    function computeDirection( xi, yi, xj, yj, xk, yk) {
+		var a = (xk - xi) * (yj - yi);
+		var b = (xj - xi) * (yk - yi);
+		return a < b ? -1 : a > b ? 1 : 0;
+    }
+		*/
+/** Do line segments (x1, y1)--(x2, y2) and (x3, y3)--(x4, y4) intersect? */
+    /*
+	function doLineSegmentsIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+		var d1 = computeDirection(x3, y3, x4, y4, x1, y1);
+		var d2 = computeDirection(x3, y3, x4, y4, x2, y2);
+		var d3 = computeDirection(x1, y1, x2, y2, x3, y3);
+		var d4 = computeDirection(x1, y1, x2, y2, x4, y4);
+  return (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+          ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) ||
+         (d1 == 0 && isOnSegment(x3, y3, x4, y4, x1, y1)) ||
+         (d2 == 0 && isOnSegment(x3, y3, x4, y4, x2, y2)) ||
+         (d3 == 0 && isOnSegment(x1, y1, x2, y2, x3, y3)) ||
+         (d4 == 0 && isOnSegment(x1, y1, x2, y2, x4, y4));
+    }
+	*/
+
+	
 	
 	var box2d = (function() {
 
@@ -180,8 +590,8 @@ luxanimals.demo = (function() {
 		var CENTER = new Point( 250, 250 );
  		var RADIUS = 250.0;
 		
-		var NUM_MALLOWS = 30;
-		var NUM_OATS = 20;
+		var NUM_MALLOWS = 10;
+		var NUM_OATS = 15;
 		
 		//ratio of radiuses. 10 means ten cereal pieces will fit width-wise in a bowl
 		var BIT_TO_BOWL = 10.0;
@@ -201,14 +611,17 @@ luxanimals.demo = (function() {
 		
 		var pourBMP;
 		
+		//var lasso;
+		
 		// box2d world setup and boundaries
 		var setup = function() {
 			world = new b2World(new b2Vec2(0,0), true);
 			createSpoonAnchor();
+			//lasso = new Lasso();
 			addDebug();
 			makeBowl( world, 24, CENTER.x, CENTER.y, RADIUS );
 			
-			makeABunchOfDynamicBodies();
+			//makeABunchOfDynamicBodies();
 			
 			setupContactListener();
 			
@@ -316,6 +729,9 @@ luxanimals.demo = (function() {
 			}
 			
 			updateMonster();
+			//monster.reset();
+			
+			//setup.startTicker();
 		}
 		
 		var getRandomPositionInBowl = function(){
@@ -336,7 +752,7 @@ luxanimals.demo = (function() {
 			var circDef = new b2CircleShape( RADIUS / BIT_TO_BOWL / SCALE );  //(Math.random() * 5 + 10) / SCALE);
 			var malFD = new b2FixtureDef();
 			malFD.shape = circDef;
-			malFD.density = 1.0;
+			malFD.density = 2.0;
 			// Override the default friction.
 			malFD.friction = 0.6;
 			malFD.restitution = 0.1;
@@ -349,7 +765,7 @@ luxanimals.demo = (function() {
 			var malBody = world.CreateBody(bodyDefC);
 			malBody.CreateFixture(malFD);
 			
-			var rainbowBMP = new Bitmap("images/rainbow50.png");
+			var rainbowBMP = new Bitmap("images/myRainbowCircle50.png");
 			rainbowBMP.x = Math.round(Math.random()*500);
 			rainbowBMP.y = -30;
 			rainbowBMP.regX = 25;   // important to set origin point to center of your bitmap
@@ -377,7 +793,7 @@ luxanimals.demo = (function() {
 		    var boxDef = new b2PolygonShape();
 		    var oatFD = new b2FixtureDef();
 		    oatFD.shape = boxDef;
-		    oatFD.density = 1.0;
+		    oatFD.density = 2.0;
 		    // Override the default friction.
 		    oatFD.friction = 0.3;
 		    oatFD.restitution = 0.1;
@@ -396,7 +812,7 @@ luxanimals.demo = (function() {
 							    new b2Vec2( Math.random() * 5, Math.random() * 5 ));
 		
 		
-		    var honeyBMP = new Bitmap("images/honeycomb60.png");
+		    var honeyBMP = new Bitmap("images/squaredOat.png");
 		//honeyBMP.x = Math.round(Math.random()*500);
 		//honeyBMP.y = -30;
 		    honeyBMP.regX = 30;   // important to set origin point to center of your bitmap
@@ -421,6 +837,8 @@ luxanimals.demo = (function() {
 		   this.skin = skin;
 		   this.cerealType = type;
 		   
+		   this.beingRemoved = false;
+		   
 		   this.touching = [];
 		   
 		   this.update = function() {  // translate box2d positions to pixels
@@ -431,13 +849,16 @@ luxanimals.demo = (function() {
 		   actors.push(this);
 		}
 		actorObject.prototype.eat = function(){
-				//console.log("Eating an actor at " + this.skin.x + ", " + this.skin.y );
-				console.log("Touching " + this.touching.length + " other bits");
+				//console.log("Touching " + this.touching.length + " other bits");
 				//eat this and all of the pieces that it's touching
 				bodiesToRemove.push(this.body);
+				this.beingRemoved = true;
 				for(var i=0; i<this.touching.length; i++) {
-						bodiesToRemove.push(this.touching[ i ].body);
+						toEat = this.touching[i];
+						toEat.beingRemoved = true;
+						bodiesToRemove.push(toEat.body);
 				}
+				
 				box2d.updateMonster();
 		}
 		
@@ -487,7 +908,7 @@ luxanimals.demo = (function() {
 			var circDef = new b2CircleShape( 15 / SCALE );
 			var fd = new b2FixtureDef();
 			fd.shape = circDef;
-			fd.density = 1.0;
+			fd.density = 0.5;
 			// Override the default friction.
 			fd.friction = 0.3;
 			fd.restitution = 0.1;
@@ -497,7 +918,7 @@ luxanimals.demo = (function() {
 			spoon = world.CreateBody(bodyDefC);
 			spoon.CreateFixture( fd );
 			
-			var rainbowBMP = new Bitmap("images/bird30.png");
+			var rainbowBMP = new Bitmap("images/mySpoon30.png");
 			rainbowBMP.regX = 15;   // important to set origin point to center of your bitmap
 			rainbowBMP.regY = 15; 
 			rainbowBMP.snapToPixel = true;
@@ -507,8 +928,6 @@ luxanimals.demo = (function() {
 			var actor = new actorObject(spoon, rainbowBMP);
 			spoon.SetUserData(actor);
 			bodies.push(spoon);
-			
-			
 			
 			//var mousedef = new b2MouseJointDef();
 			var mousedef = new b2MouseJointDef();
@@ -523,7 +942,40 @@ luxanimals.demo = (function() {
 			
 			//addEventListener( MouseEvent.MOUSE_UP, liftSpoon );
 			msEvt.onMouseUp = liftSpoon;
+			//msEvt.onMouseMove = addLassoPoint;
 			
+			//lasso.reset();
+		}
+		
+		var addLassoPoint = function( msEvt ){
+			/*	
+				var newPoint = new Point(msEvt.stageX, msEvt.stageY);
+				
+				//check if we've made a full lasso
+				if(lassoPoints.length > 5)
+				{
+						for(var i=0; i<lassoPoints.length; i++){
+								var currPoint = lassoPoints[i];
+								if((Math.abs(newPoint.x - currPoint.x) < 3) &&
+								   (Math.abs(newPoint.y - currPoint.y) < 3)){
+										
+								}
+						}
+				}
+				
+				var rainbowBMP = new Bitmap("images/blackDot.png");
+			rainbowBMP.regX = 5;   // important to set origin point to center of your bitmap
+			rainbowBMP.regY = 5; 
+			rainbowBMP.snapToPixel = true;
+			rainbowBMP.mouseEnabled = false;
+			
+			rainbowBMP.x = msEvt.stageX;
+			rainbowBMP.y = msEvt.stageY;
+			
+			stage.addChild(rainbowBMP);
+			*/
+			
+			lasso.addPoint(new Point(msEvt.stageX, msEvt.stageY));
 		}
 		
 		var liftSpoon = function( msEvt ){
@@ -548,7 +1000,8 @@ luxanimals.demo = (function() {
 				var count = 0;
 				for(var i=0; i<actors.length; i++) {
 						var currActor = actors[i];
-						if(actors[i].cerealType == toMatch)
+						if(currActor.cerealType == toMatch &&
+						   !currActor.beingRemoved)
 								count++;
 				}
 				return count;
@@ -557,10 +1010,11 @@ luxanimals.demo = (function() {
 		var updateMonster = function(){
 				var mallows = numMallows();
 				var oats = numOats();
-				
-				var ratio =  mallows / (mallows + oats);
-				console.log("Mallows: " + mallows + " & Oats: " + oats);
-				monster.update(ratio);
+				if(mallows + oats > 0){
+						var ratio =  mallows / (mallows + oats);
+						console.log("Mallows: " + mallows + " & Oats: " + oats);
+						monster.update(ratio);	
+				}
 		}
 		
 		// box2d debugger
@@ -606,17 +1060,21 @@ luxanimals.demo = (function() {
 				}
 
 				world.Step(TIMESTEP, 10, 10);
-				if( mousejoint )
+				if( mousejoint ){
 					mousejoint.SetTarget(new b2Vec2(stage.mouseX / SCALE,
-									stage.mouseY / SCALE ));	
+									stage.mouseY / SCALE ));		
+				}
 				
+					
 				fixedTimestepAccumulator -= STEP;
 				world.ClearForces();
 	   			world.m_debugDraw.m_sprite.graphics.clear();
 	   			world.DrawDebugData();
 				
 				if(actors.length == 0) {
+						//monster.showComic();
 						pourBMP.visible = true;
+//						setup.stopTicker();
 				}
 				else{
 						pourBMP.visible = false;
@@ -635,6 +1093,10 @@ luxanimals.demo = (function() {
 			} else { TIMESTEP = 1/STEP; }
 			lastTimestamp = Date.now();
 		}
+		
+		var getWorld = function(){
+				return world;
+		}
 
 		return {
 			setup: setup,
@@ -645,7 +1107,8 @@ luxanimals.demo = (function() {
 			numMallows: numMallows,
 			numOats: numOats,
 			pour: makeABunchOfDynamicBodies,
-			updateMonster: updateMonster
+			updateMonster: updateMonster,
+			getWorld: getWorld
 		}
 	})();
 
