@@ -5,7 +5,32 @@
 <title>Yucky Charms</title>
 <link href="css/style.css" rel="stylesheet" type="text/css" />
 </head>
+
+<!-- Piwik -->
+<script type="text/javascript">
+var pkBaseURL = (("https:" == document.location.protocol) ? "http://www.sampotasz.com/piwik/" : "http://www.sampotasz.com/piwik/");
+document.write(unescape("%3Cscript src='" + pkBaseURL + "piwik.js' type='text/javascript'%3E%3C/script%3E"));
+</script><script type="text/javascript">
+try {
+var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 1);
+piwikTracker.trackPageView();
+piwikTracker.enableLinkTracking();
+} catch( err ) {}
+</script><noscript><p><img src="http://www.sampotasz.com/piwik/piwik.php?idsite=1" style="border:0" alt=""/></p></noscript>
+<!-- End Piwik Tag -->
+
 <body>
+    
+    <!-- fb like button stuff -->
+    <div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+    
     <h1>It's Yucky Charms Y'all</h1>
     
     One part of a complete balanced breakfast. <br/>
@@ -13,12 +38,10 @@
     <canvas width="500" height="500" id="demoCanvas"></canvas>
     <canvas width="500" height="500" id="debugCanvas"></canvas>
     <div id="paused">Paused. Click to resume.</div><br/>
-    <div id="debug" class="button">Show/Hide Debug</div>
+   
+    <!--<div id="debug" class="button">Show/Hide Debug</div>-->
     
-    <ul> <i>Instructions:</i>
-        <li>Mouse down to move stuff about with your spoon.</li>
-        <li>Click a cereal bit to eat it and everything it's glommed on to</li>
-    </ul>
+    
     
     <br/>
     <h3>A Brief Explanation</h3>
@@ -39,6 +62,47 @@
         morning after sleep-overs, a bowl of the good stuff was always in
         order. This game is about those bowls.
     </p>
+    
+    <ul> <i>Instructions:</i>
+        <li>Mouse down to move stuff about with your spoon.</li>
+        <li>Click a cereal bit to eat it and everything it's glommed on to</li>
+    </ul>
+    
+    <br/><br/><br/><br/>
+    <h3>What Else?</h3>
+    <p>
+        This is the first game that I made by myself.
+        I'm incredibly fortunate to have had food on my table throughout
+        my entire life. My easy-going relationship with food is what allowed me
+        to make Yucky Charms.
+    </p>
+    
+    <p>
+       Hopefully, you too can play with your food-
+       you can save all the marshmallows for the end of the bowl,
+       separate m&m's by color before eating,
+       and chew around the middle of carrots.
+       Unfortunately, that's not nearly always the case in America
+       where hunger still exists for 1 in 6 Americans (THAT'S 49 MILLION PEOPLE). 
+    </p>
+    <p>
+        Donating to this food drive will help solve a real problem for real families.
+        If you have the means to do so, I hope you help out.<br/>
+    </p>
+    <p>
+        Go to the Yucky Charms Food Drive
+        <a href=http://help.feedingamerica.org/site/TR?pxfid=5410&fr_id=1140&pg=fund&et=zWNzVIsp7NRxrgMAMeBO8Q&s_tafId=1551
+        target="_blank">here</a> and help spread the word with all your socialness. <br/>
+        </p>
+    <p>
+        Thanks,<br/>
+        Sam
+    </p>
+    
+    <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://www.sampotasz.com/yuckyCharms" data-text="YUCKY CHARMS- The best game about cereal I've ever played.">Tweet</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    
+    <div class="fb-like" data-href="http://www.sampotasz.com/yuckyCharms/" data-send="false" data-layout="box_count" data-width="450" data-show-faces="true"></div>
     
     
     <br/>
@@ -61,9 +125,9 @@
          because I have no idea what I'm doing in javascript.
     </p>
     
-    <p>
+    <h3>
         Thanks for playing!
-    </p>
+    </h3>
     
     <script type="text/javascript" src="libs/jquery-1.7.1.min.js"></script>
     <script type="text/javascript" src="libs/easel.js"></script>

@@ -258,7 +258,7 @@ luxanimals.demo = (function() {
 		
 				//console.log("Ratio: " + ratio + ", index: " + faceIndex);
 				container.removeAllChildren();
-				var toShow = faces[faceIndex].bmp;
+				var toShow = faces[NUM_FACES - 1].bmp;
 				container.addChild(toShow);
 				//comic.push(toShow);
 				
